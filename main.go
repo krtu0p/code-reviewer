@@ -1,4 +1,3 @@
-// main.go
 package main
 
 import (
@@ -14,18 +13,17 @@ import (
 func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+		log.Println("No .env file found")
 	}
 
-	if os.Getenv("OPENROUTER_API_KEY") == "" {
-		log.Fatal("OPENROUTER_API_KEY environment variable is not set")
+	apiKey := os.Getenv("OPENROUTER_API_KEY")
+	if apiKey == "" {
+		log.Fatal("OPENROUTER_API_KEY is required")
 	}
 
 	r := gin.Default()
 	r.POST("/review", handlers.ReviewHandler)
 
-	log.Println("AI code reviewer listening on port :8080")
-	if err := r.Run(":8080"); err != nil {
-		log.Fatal("Failed to run server:", err)
-	}
+	log.Println("Server starting on :3000") 
+	r.Run(":3000") 
 }
