@@ -4,37 +4,41 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
-
-	"./chain"
+	"github.com/krtu0p/code-reviewer/chain"
 )
 
 func ReviewHandler(c *gin.Context) {
 	var req chain.ReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request payload",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
-	ctx := context.Background()
+	// ✅ Read API key from Authorization header
+	apiKey := c.GetHeader("Authorization")
+	if apiKey == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "API key missing"})
+		return
+	}
+	apiKey = strings.TrimPrefix(apiKey, "Bearer ")
 
-	parsed, raw, err := chain.RunReview(ctx, req)
+	ctx := context.Background()
+	parsed, raw, err := chain.RunReviewWithKey(ctx, req, apiKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":  "failed to run review",
 			"detail": err.Error(),
+			"raw":    raw,
 		})
 		return
 	}
 
 	if parsed != nil {
-		// hasil JSON sudah berhasil di-parse ke ReviewJSON
 		c.JSON(http.StatusOK, parsed)
 	} else {
-		// fallback kalau parse gagal → return raw string dari model
 		c.JSON(http.StatusOK, gin.H{"raw": raw})
 	}
 }
